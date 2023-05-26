@@ -1,15 +1,17 @@
-FROM golang:1.18.2-alpine3.15
+FROM golang:1.18 as build
 
-WORKDIR /
+WORKDIR /go/src/app
+COPY . .
 
-COPY go.mod ./
-COPY go.sum ./
 RUN go mod download
+RUN go vet -v
 
-COPY *.go ./
+RUN CGO_ENABLED=0 go build -o /go/bin/app
 
-RUN go build -o /hi-mom
+FROM gcr.io/distroless/static-debian11
 
-EXPOSE 3000
+COPY --from=build /go/bin/app /
 
-CMD [ "/hi-mom" ]
+EXPOSE 8080
+
+CMD ["/app"]
